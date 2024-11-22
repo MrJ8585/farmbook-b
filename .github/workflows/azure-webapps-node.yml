@@ -23,7 +23,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: farmbook85-backend    # set this to your application's name
+  AZURE_WEBAPP_NAME: farmbook85-backend980be876    # set this to your application's name
   NODE_VERSION: '20.x'                # set this to the node version to use
 
 permissions:
