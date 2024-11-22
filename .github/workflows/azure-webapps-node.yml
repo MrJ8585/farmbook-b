@@ -18,6 +18,10 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+                    
+      - name: Azure Login
+        uses: Azure/login@v2.2.0
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
