@@ -11,7 +11,7 @@ require("dotenv").config();
 app.use(express.json());
 const router = express.Router();
 
-const connectionString = process.env.BLOB_STORAGE_CONNECTION_STRING;
+const connectionString = process.env.BLOB_CONNECTION_STRING;
 // Crear el cliente de Blob Storage usando el Connection String
 const blobServiceClient =
 	BlobServiceClient.fromConnectionString(connectionString);
