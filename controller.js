@@ -224,16 +224,9 @@ ORDER BY
 router.get("/myfarm/:userId", async (req, res) => {
   const { userId } = req.params;
 
-<<<<<<< Updated upstream
-	try {
-		const pool = await getDbConnection();
-		const farm = await pool.request().input("usuarioID", userId)
-			.query(`SELECT 
-=======
   try {
     const pool = await getDbConnection();
     const farm = await pool.request().input("usuarioID", userId).query(`SELECT 
->>>>>>> Stashed changes
     g.*,
     -- Subconsulta para productos
     (
@@ -271,24 +264,12 @@ router.get("/myfarm/:userId", async (req, res) => {
     ) AS badges
 FROM 
     Granja g
-<<<<<<< Updated upstream
-WHERE
-			g.UsuarioID = @usuarioID
-ORDER BY 
-    g.Rating DESC`);
-		if (farm.recordset.length === 0) {
-			return res.status(404).json({
-				message: "No se encontró una granja asociada a este usuario",
-			});
-		}
-=======
 	WHERE UsuarioID = @usuarioID`);
     if (farm.recordset.length === 0) {
       return res.status(404).json({
         message: "No se encontró una granja asociada a este usuario",
       });
     }
->>>>>>> Stashed changes
 
     res.status(200).json(farm.recordset[0]);
   } catch (error) {
