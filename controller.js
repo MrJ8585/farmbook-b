@@ -230,10 +230,49 @@ router.get("/myfarm/:userId", async (req, res) => {
 
 	try {
 		const pool = await getDbConnection();
-		const farm = await pool
-			.request()
-			.input("usuarioID", userId)
-			.query("SELECT * FROM Granja WHERE UsuarioID = @usuarioID");
+		const farm = await pool.request().input("usuarioID", userId)
+			.query(`SELECT 
+    g.*,
+    -- Subconsulta para productos
+    (
+        SELECT 
+            p.Nombre AS name,
+            p.Descripcion AS Descripcion ,
+            p.Imagen AS image
+        FROM Productos p
+        WHERE p.GranjaID = g.GranjaID
+        FOR JSON PATH
+    ) AS productos,
+    -- Subconsulta para prácticas sustentables
+    (
+        SELECT 
+            ps.PracticaID AS id,
+            ps.Nombre AS nombre,
+            ps.Descripcion AS descripcion,
+            ps.Icon AS icon
+        FROM Granja_Practicas gp
+        INNER JOIN PracticasSustentables ps ON ps.PracticaID = gp.PracticaID
+        WHERE gp.GranjaID = g.GranjaID
+        FOR JSON PATH
+    ) AS practicas_sustentables,
+    -- Subconsulta para badges
+    (
+        SELECT 
+            b.BadgeID AS id,
+            b.Nombre AS nombre,
+            b.Descripcion AS descripcion,
+            b.Imagen AS imagen
+        FROM Badge_Granja bg
+        INNER JOIN Badge b ON b.BadgeID = bg.BadgeID
+        WHERE bg.GranjaID = g.GranjaID
+        FOR JSON PATH
+    ) AS badges
+FROM 
+    Granja g
+WHERE
+			g.UsuarioID = @usuarioID
+ORDER BY 
+    g.Rating DESC`);
 		if (farm.recordset.length === 0) {
 			return res.status(404).json({
 				message: "No se encontró una granja asociada a este usuario",
