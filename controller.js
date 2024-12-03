@@ -115,7 +115,47 @@ router.post("/login", async (req, res) => {
 router.get("/farms", async (req, res) => {
 	try {
 		const pool = await getDbConnection();
-		const farms = await pool.request().query("SELECT * FROM Granja");
+		const farms = await pool.request().query(`SELECT 
+    g.*,
+    -- Subconsulta para productos
+    (
+        SELECT 
+            p.Nombre AS name,
+            p.Descripcion AS Descripcion ,
+            p.Imagen AS image
+        FROM Productos p
+        WHERE p.GranjaID = g.GranjaID
+        FOR JSON PATH
+    ) AS productos,
+    -- Subconsulta para prácticas sustentables
+    (
+        SELECT 
+            ps.PracticaID AS id,
+            ps.Nombre AS nombre,
+            ps.Descripcion AS descripcion,
+            ps.Icon AS icon
+        FROM Granja_Practicas gp
+        INNER JOIN PracticasSustentables ps ON ps.PracticaID = gp.PracticaID
+        WHERE gp.GranjaID = g.GranjaID
+        FOR JSON PATH
+    ) AS practicas_sustentables,
+    -- Subconsulta para badges
+    (
+        SELECT 
+            b.BadgeID AS id,
+            b.Nombre AS nombre,
+            b.Descripcion AS descripcion,
+            b.Imagen AS imagen
+        FROM Badge_Granja bg
+        INNER JOIN Badge b ON b.BadgeID = bg.BadgeID
+        WHERE bg.GranjaID = g.GranjaID
+        FOR JSON PATH
+    ) AS badges
+FROM 
+    Granja g
+ORDER BY 
+    g.Rating DESC
+`);
 		res.status(200).json(farms.recordset);
 	} catch (error) {
 		console.error(error);
