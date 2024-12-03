@@ -225,62 +225,79 @@ ORDER BY
 });
 
 //? Ver mi granja
+//? Obtener la granja asociada al usuario junto con productos, prácticas sustentables, badges y la información del usuario
 router.get("/myfarm/:userId", async (req, res) => {
 	const { userId } = req.params;
 
 	try {
 		const pool = await getDbConnection();
-		const farm = await pool.request().input("usuarioID", userId)
-			.query(`SELECT 
-    g.*,
-    -- Subconsulta para productos
-    (
-        SELECT 
-            p.Nombre AS name,
-            p.Descripcion AS Descripcion ,
-            p.Imagen AS image
-        FROM Productos p
-        WHERE p.GranjaID = g.GranjaID
-        FOR JSON PATH
-    ) AS productos,
-    -- Subconsulta para prácticas sustentables
-    (
-        SELECT 
-            ps.PracticaID AS id,
-            ps.Nombre AS nombre,
-            ps.Descripcion AS descripcion,
-            ps.Icon AS icon
-        FROM Granja_Practicas gp
-        INNER JOIN PracticasSustentables ps ON ps.PracticaID = gp.PracticaID
-        WHERE gp.GranjaID = g.GranjaID
-        FOR JSON PATH
-    ) AS practicas_sustentables,
-    -- Subconsulta para badges
-    (
-        SELECT 
-            b.BadgeID AS id,
-            b.Nombre AS nombre,
-            b.Descripcion AS descripcion,
-            b.Imagen AS imagen
-        FROM Badge_Granja bg
-        INNER JOIN Badge b ON b.BadgeID = bg.BadgeID
-        WHERE bg.GranjaID = g.GranjaID
-        FOR JSON PATH
-    ) AS badges
-FROM 
-    Granja g
-	WHERE UsuarioID = @usuarioID`);
+		const farm = await pool.request().input("usuarioID", userId).query(`
+      SELECT 
+          g.*,
+          -- Información del usuario
+          (
+              SELECT 
+                  u.UsuarioID AS id,
+                  u.Correo AS correo,
+                  u.Nombre AS nombre,
+                  u.Apellido AS apellido,
+                  u.Edad AS edad,
+                  u.TipoClienteID AS tipoClienteID
+              FROM Usuario u
+              WHERE u.UsuarioID = @usuarioID
+              FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+          ) AS usuario,
+          -- Subconsulta para productos
+          (
+              SELECT 
+                  p.Nombre AS name,
+                  p.Descripcion AS descripcion,
+                  p.Imagen AS image
+              FROM Productos p
+              WHERE p.GranjaID = g.GranjaID
+              FOR JSON PATH
+          ) AS productos,
+          -- Subconsulta para prácticas sustentables
+          (
+              SELECT 
+                  ps.PracticaID AS id,
+                  ps.Nombre AS nombre,
+                  ps.Descripcion AS descripcion,
+                  ps.Icon AS icon
+              FROM Granja_Practicas gp
+              INNER JOIN PracticasSustentables ps ON ps.PracticaID = gp.PracticaID
+              WHERE gp.GranjaID = g.GranjaID
+              FOR JSON PATH
+          ) AS practicas_sustentables,
+          -- Subconsulta para badges
+          (
+              SELECT 
+                  b.BadgeID AS id,
+                  b.Nombre AS nombre,
+                  b.Descripcion AS descripcion,
+                  b.Imagen AS imagen
+              FROM Badge_Granja bg
+              INNER JOIN Badge b ON b.BadgeID = bg.BadgeID
+              WHERE bg.GranjaID = g.GranjaID
+              FOR JSON PATH
+          ) AS badges
+      FROM 
+          Granja g
+      WHERE UsuarioID = @usuarioID
+    `);
+
 		if (farm.recordset.length === 0) {
 			return res.status(404).json({
 				message: "No se encontró una granja asociada a este usuario",
 			});
 		}
 
+		// Responder con los datos de la granja y el usuario
 		res.status(200).json(farm.recordset[0]);
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({
-			error: "Error al obtener la información de la granja",
+			error: "Error al obtener la información de la granja y el usuario",
 		});
 	}
 });
