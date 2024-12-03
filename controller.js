@@ -100,10 +100,13 @@ router.post("/login", async (req, res) => {
       }
     );
 
-    res.status(200).json({ token });
+    return res.status(200).json({
+      token,
+      user: user.recordset[0], // Include the user data in the response
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error al iniciar sesión" });
+    return res.status(500).json({ message: "Error interno del servidor" });
   }
 });
 
